@@ -8,14 +8,16 @@ on:
         type: boolean
         default: false
 
-# Everything runs in one job under GITHUB_TOKEN. This is deliberate: GitHub
-# does not trigger workflows from events created with GITHUB_TOKEN, so a
-# release cut here would never fire publish.yml. Rather than keep a PAT alive
-# just to defeat that guard, this workflow does the whole job itself.
+# Everything runs in one job under GITHUB_TOKEN. GitHub does not trigger workflows from
+# events created with GITHUB_TOKEN, so a release cut here would never fire publish.yml;
+# rather than keep a PAT alive to defeat that guard, this workflow does the whole job.
 #
-# publish.yml still exists for the other path: when a human promotes a
-# prerelease to a full release, that IS a human-originated event, so it fires
-# normally and regenerates the manifest.
+# Order matters: nothing is committed, pushed, tagged or released until the tests and
+# the package verification have passed against the exact version being cut. A failure
+# anywhere before "Publish release" leaves the repository untouched.
+#
+# publish.yml still handles the other path: a human promoting a prerelease to a full
+# release is a human-originated event and fires normally.
 
 permissions:
   contents: write
@@ -43,25 +45,24 @@ jobs:
         with:
           dotnet-version: "10.0.*"
 
-      # Bumps build.yaml, commits, pushes, and creates the GitHub Release.
-      - name: Cut release
-        run: make ${{ inputs.prerelease && 'prerelease' || 'release' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # ---- Verification: nothing below this line has side effects until "Publish release"
 
-      # Read back the version make just wrote, so the build and upload
-      # agree on it without recomputing from git-cliff.
-      - name: Resolve version
+      - name: Resolve next version
         id: version
         run: |
-          version="$(sed -n 's/^version: *"\(.*\)"/\1/p' build.yaml)"
-          if [ -z "$version" ]; then
-            echo "::error::Could not read version from build.yaml"
+          set -euo pipefail
+          git fetch --tags
+          tag="$(make --no-print-directory version)"
+          if [ -z "$tag" ]; then
+            echo "::error::git-cliff produced no version"
             exit 1
           fi
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
-          echo "Releasing ${version}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "Next version: ${tag}"
+
+      - name: Run tests
+        run: dotnet test Gelato.sln --configuration Release
 
       - name: Build plugin
         id: jprm
@@ -69,6 +70,20 @@ jobs:
         with:
           dotnet-target: "net10.0"
           version: ${{ steps.version.outputs.version }}
+
+      - name: Verify package
+        run: scripts/verify-package.sh "${{ steps.jprm.outputs.artifact }}" "${{ steps.version.outputs.version }}"
+
+      # jprm stamps <Version> into Gelato.csproj while building. Put the tree back so the
+      # release commit contains only the build.yaml bump.
+      - name: Restore working tree after build
+        run: |
+          git checkout -- Gelato.csproj
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "::error::working tree has unexpected tracked changes after build:"
+            git status --porcelain --untracked-files=no
+            exit 1
+          fi
 
       - name: Prepare release assets
         id: assets
@@ -85,13 +100,22 @@ jobs:
           ls -l
           echo "dir=${staging}" >> "$GITHUB_OUTPUT"
 
+      # ---- Publication: first permanent effects
+
+      - name: Write release notes
+        run: make --no-print-directory notes VERSION="${{ steps.version.outputs.tag }}"
+
+      - name: Publish release
+        run: make --no-print-directory publish VERSION="${{ steps.version.outputs.tag }}" RELEASE_FLAGS="${{ inputs.prerelease && '--prerelease' || '' }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload release assets
         run: gh release upload "${{ steps.version.outputs.tag }}" "${{ steps.assets.outputs.dir }}"/* --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Prereleases stop here: installable by hand, but never advertised to
-      # the Jellyfin servers polling repository.json.
+      # Prereleases stop here: installable by hand, never advertised to Jellyfin servers.
       - name: Regenerate plugin manifest
         if: ${{ !inputs.prerelease }}
         uses: Kevinjil/jellyfin-plugin-repo-action@v0.4.3
