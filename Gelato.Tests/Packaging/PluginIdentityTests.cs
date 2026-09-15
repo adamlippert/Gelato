@@ -15,6 +15,9 @@ public class PluginIdentityTests
         RepoPaths.File("build.yaml")
     );
     private static readonly string PluginSource = File.ReadAllText(RepoPaths.File("Plugin.cs"));
+    private static readonly string ConfigPage = File.ReadAllText(
+        RepoPaths.File(Path.Combine("Config", "config.html"))
+    );
     private static readonly string ProjectFile = File.ReadAllText(RepoPaths.File("Gelato.csproj"));
 
     [Fact]
@@ -36,6 +39,20 @@ public class PluginIdentityTests
         Assert.True(match.Success, "Plugin.cs no longer declares Name => \"...\"");
 
         Assert.Equal(Manifest.Name, match.Groups["name"].Value);
+    }
+
+    /// <summary>
+    /// The settings page talks to the server by plugin id. If it carries a different GUID
+    /// than the plugin, every load and save on that page hits a plugin that is not
+    /// installed and silently does nothing.
+    /// </summary>
+    [Fact]
+    public void ConfigPage_PluginId_MatchesBuildYaml()
+    {
+        var match = Regex.Match(ConfigPage, @"const pluginId = ""(?<guid>[0-9A-Fa-f-]{36})"";");
+        Assert.True(match.Success, "config.html no longer declares const pluginId = \"...\"");
+
+        Assert.Equal(Guid.Parse(Manifest.Guid), Guid.Parse(match.Groups["guid"].Value));
     }
 
     [Fact]
