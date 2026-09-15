@@ -1,3 +1,5 @@
+using Gelato.Config;
+
 namespace Gelato.Services;
 
 /// <summary>
@@ -8,6 +10,19 @@ namespace Gelato.Services;
 /// </summary>
 public static class DirectPlayPolicy
 {
+    /// <summary>
+    /// Whether <paramref name="userId"/> may be handed <paramref name="path"/> for direct
+    /// play: the effective (per-user, else global) DirectPlay setting must be on AND the
+    /// path must be a remote http(s) URL.
+    /// </summary>
+    public static bool IsAllowed(PluginConfiguration? cfg, Guid userId, string? path)
+    {
+        if (cfg is null)
+            return false;
+
+        return cfg.GetEffectiveConfig(userId).DirectPlay && IsDirectPlayable(path);
+    }
+
     public static bool IsDirectPlayable(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))

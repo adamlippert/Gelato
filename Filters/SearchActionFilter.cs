@@ -182,6 +182,21 @@ public class SearchActionFilter(
             if (baseItem is null)
                 continue;
 
+            // A result for a title already in the library must point at the library item.
+            // The synthetic id below only resolves once the insert filter has materialised
+            // the title, so returning it for an existing one 404s on click (upstream #168).
+            if (baseItem.ProviderIds is { Count: > 0 })
+            {
+                var existing = manager.FindExistingItem(baseItem);
+                if (existing is not null)
+                {
+                    var existingDto = dtoService.GetBaseItemDto(existing, options);
+                    if (seen.Add(existingDto.Id))
+                        dtos.Add(existingDto);
+                    continue;
+                }
+            }
+
             var dto = dtoService.GetBaseItemDto(baseItem, options);
             var stremioUri = StremioUri.FromBaseItem(baseItem);
             dto.Id = stremioUri.ToGuid();
