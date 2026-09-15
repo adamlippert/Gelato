@@ -8,6 +8,14 @@
     "owner": "survivalizer",
     "versions": [
       {
+        "changelog": "## [0.26.19.2] - 2026-09-15\n\n### 🐛 Bug Fixes\n- Support Jellyfin 12.1 by implementing IItemRepository.GetTagNames\n\n",
+        "checksum": "47ce6e0051897b0b7e126cf9ec27216a",
+        "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.2/chocolate-gelato_0.26.19.2.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-15T18:59:17Z",
+        "version": "0.26.19.2"
+      },
+      {
         "changelog": "## [0.26.19.1] - 2026-09-15\n\n### ⚙️ CI/Build\n- Create releases as drafts and publish after assets upload\n\n### 🐛 Bug Fixes\n- Stop DownloadFilter breaking downloads of local items\n- Parse bare-minute and ISO-8601 runtimes correctly\n- Fall back to the addon's own id when IMDb metadata lookup fails\n- Keep stream URLs from clients unless direct play allows it\n\n",
         "checksum": "9c8eed735eca1f11d320f61db918f498",
         "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.1/chocolate-gelato_0.26.19.1.zip",
