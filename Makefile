@@ -18,8 +18,11 @@ publish:
 	@test -n "$(VERSION)" || { echo "VERSION is required, e.g. make publish VERSION=v1.2.3.4" >&2; exit 1; }
 	@test -s "$(NOTES_FILE)" || { echo "$(NOTES_FILE) is missing or empty; run make notes VERSION=$(VERSION) first" >&2; exit 1; }
 	sed -i.bak 's/^version: .*/version: "$(VERSION:v%=%)"/' build.yaml && rm -f build.yaml.bak
-	git add build.yaml
-	git commit -m "chore(release): bump version to $(VERSION)"
+	@if git diff --quiet -- build.yaml; then \
+		echo "build.yaml is already at $(VERSION:v%=%); nothing to commit"; \
+	else \
+		git add build.yaml && git commit -m "chore(release): bump version to $(VERSION)"; \
+	fi
 	git push
 	gh release create $(VERSION) --title "$(VERSION)" --notes-file $(NOTES_FILE) $(RELEASE_FLAGS)
 	@echo "Release $(VERSION) created successfully!"
