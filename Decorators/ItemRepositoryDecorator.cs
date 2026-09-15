@@ -69,8 +69,9 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
         if (!isListingIntent)
             return filter;
 
-        var filterUnreleased = GelatoPlugin.Instance!.Configuration.FilterUnreleased;
-        var bufferDays = GelatoPlugin.Instance.Configuration.FilterUnreleasedBufferDays;
+        var config = GelatoPlugin.Instance?.Configuration;
+        var filterUnreleased = config?.FilterUnreleased ?? false;
+        var bufferDays = config?.FilterUnreleasedBufferDays ?? 0;
         var hasIncludeTypes = includeTypes.Length != 0;
         var isStreamTagQuery = filter.Tags.Contains(
             GelatoManager.StreamTag,
@@ -118,10 +119,12 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
         return filter;
     }
 
+    // The home screen's per-library "Recently Added" comes through here, not GetItemList.
+    // Without the same listing filters every synced stream row surfaces as a new title.
     public IReadOnlyList<BaseItem> GetLatestItemList(
         InternalItemsQuery filter,
         CollectionType collectionType
-    ) => inner.GetLatestItemList(filter, collectionType);
+    ) => inner.GetLatestItemList(ApplyFilters(filter), collectionType);
 
     public QueryResult<(BaseItem Item, ItemCounts ItemCounts)> GetGenres(
         InternalItemsQuery filter
