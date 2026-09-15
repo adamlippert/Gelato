@@ -100,7 +100,7 @@ jobs:
           ls -l
           echo "dir=${staging}" >> "$GITHUB_OUTPUT"
 
-      # ---- Publication: first permanent effects
+      # ---- Publication: first permanent effects (commit + push happen in "Publish release")
 
       - name: Write release notes
         run: make --no-print-directory notes VERSION="${{ steps.version.outputs.tag }}"
@@ -112,6 +112,13 @@ jobs:
 
       - name: Upload release assets
         run: gh release upload "${{ steps.version.outputs.tag }}" "${{ steps.assets.outputs.dir }}"/* --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The release was created as a draft; the tag and the release page become visible
+      # only now, with the assets already attached.
+      - name: Finalize release
+        run: make --no-print-directory finalize VERSION="${{ steps.version.outputs.tag }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

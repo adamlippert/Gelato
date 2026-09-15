@@ -12,8 +12,9 @@ notes:
 	@git cliff --unreleased --tag $(VERSION) --strip all 2>/dev/null > $(NOTES_FILE)
 	@echo "Release notes for $(VERSION) written to $(NOTES_FILE)"
 
-# Bump build.yaml to VERSION, commit, push, and create the GitHub Release.
-# This is the first step with permanent effects. Run tests and package verification first.
+# Bump build.yaml to VERSION, commit, push, and create the GitHub Release as a DRAFT.
+# This is the first step with permanent effects (the commit and push). Run tests and package
+# verification first; attach assets, then `make finalize` to make the release visible.
 publish:
 	@test -n "$(VERSION)" || { echo "VERSION is required, e.g. make publish VERSION=v1.2.3.4" >&2; exit 1; }
 	@test -s "$(NOTES_FILE)" || { echo "$(NOTES_FILE) is missing or empty; run make notes VERSION=$(VERSION) first" >&2; exit 1; }
@@ -24,8 +25,15 @@ publish:
 		git add build.yaml && git commit -m "chore(release): bump version to $(VERSION)"; \
 	fi
 	git push
-	gh release create $(VERSION) --title "$(VERSION)" --notes-file $(NOTES_FILE) $(RELEASE_FLAGS)
-	@echo "Release $(VERSION) created successfully!"
+	gh release create $(VERSION) --draft --title "$(VERSION)" --notes-file $(NOTES_FILE) $(RELEASE_FLAGS)
+	@echo "Draft release $(VERSION) created; run make finalize VERSION=$(VERSION) once assets are attached."
+
+# Turn the draft into a visible release. The tag and the release only become public here,
+# so a failed asset upload can never leave a release with nothing to download.
+finalize:
+	@test -n "$(VERSION)" || { echo "VERSION is required, e.g. make finalize VERSION=v1.2.3.4" >&2; exit 1; }
+	gh release edit $(VERSION) --draft=false
+	@echo "Release $(VERSION) published."
 
 # Local end-to-end release: compute the version, write notes, publish.
 # The CI workflow does NOT use this target; it runs tests and package checks between
@@ -36,7 +44,8 @@ release:
 	v="$$(git cliff --bumped-version 2>/dev/null)"; \
 	echo "New version will be: $$v"; \
 	$(MAKE) --no-print-directory notes VERSION=$$v; \
-	$(MAKE) --no-print-directory publish VERSION=$$v RELEASE_FLAGS="$(RELEASE_FLAGS)"
+	$(MAKE) --no-print-directory publish VERSION=$$v RELEASE_FLAGS="$(RELEASE_FLAGS)"; \
+	$(MAKE) --no-print-directory finalize VERSION=$$v
 
 prerelease: RELEASE_FLAGS := --prerelease
 prerelease: release
@@ -53,4 +62,4 @@ release-preview:
 test:
 	dotnet test Gelato.sln
 
-.PHONY: version notes publish release prerelease release-preview test
+.PHONY: version notes publish finalize release prerelease release-preview test
