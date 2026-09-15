@@ -8,6 +8,14 @@
     "owner": "survivalizer",
     "versions": [
       {
+        "changelog": "## [0.26.19.3] - 2026-09-15\n\n### 🐛 Bug Fixes\n- Point the settings page at this plugin's GUID\n\n",
+        "checksum": "abfb9b3dc5118d44f81ca529b7120c51",
+        "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.3/chocolate-gelato_0.26.19.3.zip",
+        "targetAbi": "12.1.0.0",
+        "timestamp": "2026-09-15T19:15:20Z",
+        "version": "0.26.19.3"
+      },
+      {
         "changelog": "## [0.26.19.2] - 2026-09-15\n\n### 🐛 Bug Fixes\n- Support Jellyfin 12.1 by implementing IItemRepository.GetTagNames\n\n",
         "checksum": "47ce6e0051897b0b7e126cf9ec27216a",
         "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.2/chocolate-gelato_0.26.19.2.zip",
