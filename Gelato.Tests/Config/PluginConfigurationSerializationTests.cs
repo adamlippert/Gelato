@@ -33,6 +33,7 @@ public class PluginConfigurationSerializationTests
             P2PDLSpeed = 1024,
             CreateCollections = true,
             LastSeenServerVersion = "12.0.0",
+            DirectPlay = true,
             Catalogs =
             [
                 new CatalogConfig
@@ -73,6 +74,7 @@ public class PluginConfigurationSerializationTests
         Assert.Equal(original.P2PDLSpeed, restored.P2PDLSpeed);
         Assert.Equal(original.CreateCollections, restored.CreateCollections);
         Assert.Equal(original.LastSeenServerVersion, restored.LastSeenServerVersion);
+        Assert.Equal(original.DirectPlay, restored.DirectPlay);
 
         var catalog = Assert.Single(restored.Catalogs);
         Assert.Equal("top", catalog.Id);
@@ -101,6 +103,36 @@ public class PluginConfigurationSerializationTests
         var cfg = new PluginConfiguration { Url = "   " };
 
         Assert.Throws<InvalidOperationException>(() => cfg.GetBaseUrl());
+    }
+
+    [Fact]
+    public void DirectPlay_DefaultsToOff_SoProxyingIsPreserved()
+    {
+        Assert.False(new PluginConfiguration().DirectPlay);
+    }
+
+    [Fact]
+    public void ApplyOverrides_UsesTheUsersDirectPlay_NotTheBase()
+    {
+        var baseCfg = new PluginConfiguration { DirectPlay = false };
+        var user = new UserConfig { UserId = Guid.NewGuid(), DirectPlay = true };
+
+        Assert.True(user.ApplyOverrides(baseCfg).DirectPlay);
+    }
+
+    [Fact]
+    public void GetEffectiveConfig_UserOverrideWins_OtherUsersGetGlobal()
+    {
+        var overridden = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        var cfg = new PluginConfiguration
+        {
+            DirectPlay = true,
+            UserConfigs = [new UserConfig { UserId = overridden, DirectPlay = false }],
+        };
+
+        Assert.False(cfg.GetEffectiveConfig(overridden).DirectPlay);
+        Assert.True(cfg.GetEffectiveConfig(other).DirectPlay);
     }
 
     private static string Serialize(PluginConfiguration cfg)

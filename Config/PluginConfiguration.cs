@@ -28,6 +28,14 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool DisableSearch { get; set; } = false;
     public bool EnableJavaScriptInjection { get; set; } = false;
     public bool LazyImages { get; set; } = false;
+
+    /// <summary>
+    /// Hand clients the real stream URL at playback so they fetch it directly from the debrid
+    /// host instead of proxying through Jellyfin. Off by default: proxying makes every stream
+    /// arrive from the server's IP, which IP-limited debrid services require. Only remote
+    /// http(s) streams are ever exposed; P2P proxy URLs stay masked regardless.
+    /// </summary>
+    public bool DirectPlay { get; set; } = false;
     public List<CatalogConfig> Catalogs { get; set; } = [];
     public List<UserConfig> UserConfigs { get; set; } = [];
 
@@ -120,6 +128,7 @@ public class UserConfig
     public string MoviePath { get; set; } = "";
     public string SeriesPath { get; set; } = "";
     public bool DisableSearch { get; set; } = false;
+    public bool DirectPlay { get; set; } = false;
 
     /// <summary>
     /// Apply user overrides to base configuration - replaces all overridable fields
@@ -133,6 +142,7 @@ public class UserConfig
             MoviePath = MoviePath,
             SeriesPath = SeriesPath,
             DisableSearch = DisableSearch,
+            DirectPlay = DirectPlay,
 
             // All other fields from base config
             StreamTTL = baseConfig.StreamTTL,

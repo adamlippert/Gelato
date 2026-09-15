@@ -28,7 +28,7 @@ Bring the power of Stremio addons directly into Jellyfin. This plugin replaces J
 - **Catalogs** – Import items from stremio catalogs into your library with scheduled tasks
 - **Realtime Streaming** – Streams are resolved on demand and play instantly
 - **Database Integration** – Stremio items appear like native Jellyfin items
-- **Act as an proxy** - Streams are proxied through Jellyfin, so debrid sees everything as a single IP.
+- **Act as a proxy** - Streams are proxied through Jellyfin, so debrid sees everything as a single IP. Optionally enable **Direct play** (globally or per user) to hand clients the stream URL instead — useful with debrid services that don't limit IPs, such as TorBox.
 - **Per user settings** - Users can have their own manifest, perfect for age restricted accounts.
 - **More Content, Less Hassle** – Expand Jellyfin with community-driven Stremio catalogs
 
