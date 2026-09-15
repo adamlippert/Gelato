@@ -2,6 +2,7 @@ using Jellyfin.Database.Implementations.Entities;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 
@@ -90,12 +91,16 @@ public class InsertActionFilter(
             }
         }
 
-        // Fetch full metadata
+        // Fetch full metadata. Try the IMDb id first for addons that key on it, then the
+        // addon's own id: a tmdb-only meta addon rejects "tt…" ids outright (upstream #207).
         var cfg = GelatoPlugin.Instance!.GetConfig(userId);
-        var meta = await cfg.Stremio.GetMetaAsync(
-            stremioMeta.ImdbId ?? stremioMeta.Id,
-            stremioMeta.Type
-        );
+        StremioMeta? meta = null;
+        foreach (var lookupId in MetaLookupIds(stremioMeta.ImdbId, stremioMeta.Id))
+        {
+            meta = await cfg.Stremio.GetMetaAsync(lookupId, stremioMeta.Type);
+            if (meta is not null)
+                break;
+        }
         if (meta is null)
         {
             log.LogError(
@@ -103,7 +108,9 @@ public class InsertActionFilter(
                 stremioMeta.Id,
                 stremioMeta.Type
             );
-            await next();
+            // The item only exists in Gelato's search cache; letting Jellyfin look the id up
+            // yields a phantom the client retries forever. Answer plainly instead.
+            ctx.Result = new NotFoundResult();
             return;
         }
 
@@ -116,6 +123,19 @@ public class InsertActionFilter(
         }
 
         await next();
+    }
+
+    /// <summary>
+    /// Candidate ids for a metadata lookup, in the order to try them, without repeats.
+    /// </summary>
+    public static IReadOnlyList<string> MetaLookupIds(string? imdbId, string id)
+    {
+        var ids = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(imdbId))
+            ids.Add(imdbId);
+        if (!string.IsNullOrWhiteSpace(id) && !ids.Contains(id))
+            ids.Add(id);
+        return ids;
     }
 
     private async Task HandleLocalSeriesAsync(Guid userId, Series series, CancellationToken ct)
