@@ -5,12 +5,20 @@
     "guid": "E2513B6C-E574-47A5-B89D-CE05BF975685",
     "name": "Chocolate Gelato",
     "overview": "Stream external media.",
-    "owner": "adamlippert",
+    "owner": "survivalizer",
     "versions": [
+      {
+        "changelog": "## [0.26.19.0] - 2026-09-15\n\n### 🐛 Bug Fixes\n- Let make publish tolerate an already-bumped build.yaml (#2)\n\n### 📚 Documentation\n- Add design spec for test suite and release gate\n- Add implementation plan for test suite and release gate\n\n### 🚀 Features\n- Test suite and release gate (#1)\n- Opt-in direct play so clients stream from the debrid host (#4)\n\n### 🧹 Chores\n- Point install URL and owner at the renamed survivalizer account (#3)\n\n",
+        "checksum": "37d491c4a9884622c55e77e0231652c0",
+        "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.0/chocolate-gelato_0.26.19.0.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-15T02:03:12Z",
+        "version": "0.26.19.0"
+      },
       {
         "changelog": "## [0.26.18.1] - 2026-09-14\n\n### 🚜 Refactor\n- Make releases self-contained so no PAT is needed\n\n",
         "checksum": "fe5e5d5ab97dd028bb178e3629141045",
-        "sourceUrl": "https://github.com/adamlippert/Gelato/releases/download/v0.26.18.1/chocolate-gelato_0.26.18.1.zip",
+        "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.18.1/chocolate-gelato_0.26.18.1.zip",
         "targetAbi": "12.0.0.0",
         "timestamp": "2026-09-14T18:56:33Z",
         "version": "0.26.18.1"
