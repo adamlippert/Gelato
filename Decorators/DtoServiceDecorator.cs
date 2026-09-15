@@ -7,6 +7,8 @@ using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Http;
 
+using Gelato.Services;
+
 namespace Gelato.Decorators;
 
 public sealed class DtoServiceDecorator(IDtoService inner, Lazy<GelatoManager> manager, IHttpContextAccessor http)
@@ -95,6 +97,27 @@ public sealed class DtoServiceDecorator(IDtoService inner, Lazy<GelatoManager> m
             }
 
             dto.CanDownload = true;
+
+            // Item DTOs carry the raw stream URL in MediaSources. Clients that read those
+            // directly (rather than asking PlaybackInfo) must not be told they can direct-play
+            // it unless the user's DirectPlay setting allows it (upstream #168).
+            if (dto.MediaSources is not null)
+            {
+                var cfg = GelatoPlugin.Instance?.Configuration;
+                var userId = user?.Id ?? Guid.Empty;
+                foreach (var source in dto.MediaSources)
+                {
+                    if (
+                        source.Path is not null
+                        && source.Path.IsUrl()
+                        && !DirectPlayPolicy.IsAllowed(cfg, userId, source.Path)
+                    )
+                    {
+                        source.SupportsDirectPlay = false;
+                    }
+                }
+            }
+
             // mark if placeholder
             if (
                 isList
