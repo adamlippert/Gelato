@@ -103,34 +103,37 @@ public static class Utils
         if (string.IsNullOrWhiteSpace(input))
             return null;
 
-        input = input.Trim().ToLowerInvariant();
+        input = input.Trim();
 
-        // Try built-in parse (hh:mm:ss)
+        // A bare number is a runtime in minutes. This must come before TimeSpan.TryParse,
+        // which reads a bare integer as a number of days.
+        if (int.TryParse(input, out var onlyNum))
+            return TimeSpan.FromMinutes(onlyNum).Ticks;
+
+        // Built-in parse (hh:mm:ss, d.hh:mm:ss)
         if (TimeSpan.TryParse(input, out var ts))
             return ts.Ticks;
 
-        // Try XML ISO8601 style (PT2H29M)
+        // XML ISO8601 duration (PT2H29M). The designators are case-sensitive, so normalise.
         try
         {
-            ts = System.Xml.XmlConvert.ToTimeSpan(input);
+            ts = System.Xml.XmlConvert.ToTimeSpan(input.ToUpperInvariant());
             return ts.Ticks;
         }
         catch
         {
             // ignore
         }
+
         // Regex fallback for human formats like "2h29min"
-        var h = Regex.Match(input, @"(\d+)\s*h");
-        var m = Regex.Match(input, @"(\d+)\s*min");
-        var s = Regex.Match(input, @"(\d+)\s*s(ec)?");
+        var lower = input.ToLowerInvariant();
+        var h = Regex.Match(lower, @"(\d+)\s*h");
+        var m = Regex.Match(lower, @"(\d+)\s*min");
+        var s = Regex.Match(lower, @"(\d+)\s*s(ec)?");
 
         var hours = h.Success ? int.Parse(h.Groups[1].Value) : 0;
         var mins = m.Success ? int.Parse(m.Groups[1].Value) : 0;
         var secs = s.Success ? int.Parse(s.Groups[1].Value) : 0;
-
-        // If plain number like "149" → minutes
-        if (!h.Success && !m.Success && !s.Success && int.TryParse(input, out var onlyNum))
-            mins = onlyNum;
 
         return new TimeSpan(hours, mins, secs).Ticks;
     }

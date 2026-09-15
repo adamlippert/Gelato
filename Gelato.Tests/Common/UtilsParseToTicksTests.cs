@@ -33,28 +33,24 @@ public class UtilsParseToTicksTests
         Assert.Equal(0L, Utils.ParseToTicks("abc"));
     }
 
-    /// <summary>
-    /// KNOWN DEFECT, pinned deliberately. The code intends a bare number to mean minutes
-    /// (see the `onlyNum` branch), but TimeSpan.TryParse accepts a bare integer as DAYS and
-    /// returns first, so that branch is unreachable. "149" therefore parses as 149 days.
-    /// Fixing this is a behaviour change; when it is fixed, update this expectation to
-    /// 149 minutes (89400000000) in the same commit.
-    /// </summary>
     [Fact]
-    public void BareNumber_IsCurrentlyParsedAsDays_KnownDefect()
+    public void BareNumber_MeansMinutes()
     {
-        Assert.Equal(TimeSpan.FromDays(149).Ticks, Utils.ParseToTicks("149"));
+        // A bare integer from an addon is a runtime in minutes, never in days.
+        Assert.Equal(TimeSpan.FromMinutes(149).Ticks, Utils.ParseToTicks("149"));
     }
 
-    /// <summary>
-    /// KNOWN DEFECT, pinned deliberately. Input is lower-cased before XmlConvert.ToTimeSpan,
-    /// which is case-sensitive and rejects "pt2h29m". The regex fallback then matches "2h"
-    /// but not "29m" (it requires "min"), so the minutes are lost. "PT90S" survives only
-    /// because the seconds regex accepts a bare "s".
-    /// </summary>
     [Fact]
-    public void Iso8601WithMinutes_LosesMinutes_KnownDefect()
+    public void Iso8601Duration_KeepsMinutes()
     {
-        Assert.Equal(TimeSpan.FromHours(2).Ticks, Utils.ParseToTicks("PT2H29M"));
+        Assert.Equal(new TimeSpan(2, 29, 0).Ticks, Utils.ParseToTicks("PT2H29M"));
+    }
+
+    [Theory]
+    [InlineData("pt2h29m")]
+    [InlineData("Pt2H29m")]
+    public void Iso8601Duration_IsCaseInsensitive(string input)
+    {
+        Assert.Equal(new TimeSpan(2, 29, 0).Ticks, Utils.ParseToTicks(input));
     }
 }
