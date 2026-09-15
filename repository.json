@@ -8,6 +8,14 @@
     "owner": "survivalizer",
     "versions": [
       {
+        "changelog": "## [0.26.19.1] - 2026-09-15\n\n### ⚙️ CI/Build\n- Create releases as drafts and publish after assets upload\n\n### 🐛 Bug Fixes\n- Stop DownloadFilter breaking downloads of local items\n- Parse bare-minute and ISO-8601 runtimes correctly\n- Fall back to the addon's own id when IMDb metadata lookup fails\n- Keep stream URLs from clients unless direct play allows it\n\n",
+        "checksum": "9c8eed735eca1f11d320f61db918f498",
+        "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.1/chocolate-gelato_0.26.19.1.zip",
+        "targetAbi": "12.0.0.0",
+        "timestamp": "2026-09-15T14:34:14Z",
+        "version": "0.26.19.1"
+      },
+      {
         "changelog": "## [0.26.19.0] - 2026-09-15\n\n### 🐛 Bug Fixes\n- Let make publish tolerate an already-bumped build.yaml (#2)\n\n### 📚 Documentation\n- Add design spec for test suite and release gate\n- Add implementation plan for test suite and release gate\n\n### 🚀 Features\n- Test suite and release gate (#1)\n- Opt-in direct play so clients stream from the debrid host (#4)\n\n### 🧹 Chores\n- Point install URL and owner at the renamed survivalizer account (#3)\n\n",
         "checksum": "37d491c4a9884622c55e77e0231652c0",
         "sourceUrl": "https://github.com/survivalizer/Gelato/releases/download/v0.26.19.0/chocolate-gelato_0.26.19.0.zip",
