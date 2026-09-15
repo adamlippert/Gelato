@@ -38,9 +38,19 @@ public sealed class DownloadFilter(
         if (user is not null)
         {
             var mediaSourceIdStr = ctx.HttpContext.Items["MediaSourceId"] as string;
-            var hasMediaSourceId = Guid.TryParse(mediaSourceIdStr, out var mediaSourceId);
+            var hasMediaSourceId = TryGetMediaSourceId(mediaSourceIdStr, out var mediaSourceId);
 
-            var item = library.GetItemById<Video>(hasMediaSourceId ? mediaSourceId : guid, user);
+            // A failure to resolve the item must never break downloads of media Gelato does not
+            // own; anything unexpected here falls through to Jellyfin's own handler.
+            Video? item;
+            try
+            {
+                item = library.GetItemById<Video>(hasMediaSourceId ? mediaSourceId : guid, user);
+            }
+            catch (Exception)
+            {
+                item = null;
+            }
 
             if (item != null && manager.IsStremio(item))
             {
@@ -93,5 +103,18 @@ public sealed class DownloadFilter(
         }
 
         await next();
+    }
+
+    /// <summary>
+    /// Some clients send MediaSourceId as the empty GUID. Treat that like "not sent": looking
+    /// an empty id up throws inside Jellyfin and would turn the request into a 400.
+    /// </summary>
+    public static bool TryGetMediaSourceId(string? raw, out Guid id)
+    {
+        if (Guid.TryParse(raw, out id) && id != Guid.Empty)
+            return true;
+
+        id = Guid.Empty;
+        return false;
     }
 }
