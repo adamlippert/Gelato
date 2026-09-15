@@ -22,9 +22,28 @@ namespace Gelato.Decorators;
 public sealed class ItemCountServiceDecorator(IItemCountService inner, IItemRepository repo)
     : IItemCountService
 {
-    public int GetCount(InternalItemsQuery filter) => inner.GetCount(filter);
+    public int GetCount(InternalItemsQuery filter) => inner.GetCount(ExcludeStreamRows(filter));
 
-    public ItemCounts GetItemCounts(InternalItemsQuery filter) => inner.GetItemCounts(filter);
+    public ItemCounts GetItemCounts(InternalItemsQuery filter) =>
+        inner.GetItemCounts(ExcludeStreamRows(filter));
+
+    /// <summary>
+    /// Stream-version rows are Movie/Episode items; left alone, /Items/Counts reports every
+    /// synced stream as a title. Gelato's own lookups (IsDeadPerson marker or an explicit
+    /// stream-tag query) and callers that already exclude tags are left untouched.
+    /// </summary>
+    private static InternalItemsQuery ExcludeStreamRows(InternalItemsQuery filter)
+    {
+        var targetsStreamRows = filter.Tags.Contains(
+            GelatoManager.StreamTag,
+            StringComparer.OrdinalIgnoreCase
+        );
+        if (filter.IsDeadPerson == true || targetsStreamRows || filter.ExcludeTags.Length != 0)
+            return filter;
+
+        filter.ExcludeTags = [GelatoManager.StreamTag];
+        return filter;
+    }
 
     public ItemCounts GetItemCountsForNameItem(
         BaseItemKind kind,
