@@ -160,6 +160,13 @@ public sealed class GelatoItemRepository(IItemRepository inner, IHttpContextAcce
         MediaStreamType mediaStreamType
     ) => inner.GetMediaStreamLanguages(filter, mediaStreamType);
 
+    // Added to IItemRepository in Jellyfin 12.1; without it the assembly fails type loading
+
+    // and the plugin is marked "Not Supported".
+
+    public IReadOnlyList<string> GetTagNames(InternalItemsQuery filter) =>
+        inner.GetTagNames(filter);
+
     public QueryFiltersLegacy GetQueryFiltersLegacy(InternalItemsQuery filter) =>
         inner.GetQueryFiltersLegacy(filter);
 
