@@ -107,6 +107,17 @@
               </label>
             </div>
 
+            <div class="checkboxContainer checkboxContainer-withDescription">
+              <label>
+                <input is="emby-checkbox" type="checkbox" id="chkDirectPlay" />
+                <span>Direct play (hand clients the stream URL)</span>
+              </label>
+              <div class="fieldDescription">
+                Clients fetch the stream straight from the debrid host instead of proxying through
+                Jellyfin. Leave off if your debrid service limits streams to a single IP.
+              </div>
+            </div>
+
             <div class="checkboxContainer checkboxContainer-withDescription" style="margin-bottom: 0.5em;">
               <label>
                 <input is="emby-checkbox" type="checkbox" id="chkFilterUnreleased" />
@@ -227,6 +238,13 @@
                 </label>
               </div>
 
+              <div class="checkboxContainer">
+                <label>
+                  <input is="emby-checkbox" type="checkbox" id="chkUserDirectPlay" />
+                  <span>Direct play</span>
+                </label>
+              </div>
+
               <div style="margin-top: 1em;">
                 <button type="button" id="btnAddOverride" is="emby-button" class="raised emby-button">Save
                   Override</button>
@@ -294,6 +312,7 @@
         const chkEnableMixed = page.querySelector('#chkEnableMixed');
         const chkExtendLocalSeriesTrees = page.querySelector('#chkExtendLocalSeriesTrees');
         const chkDisableSearch = page.querySelector('#chkDisableSearch');
+        const chkDirectPlay = page.querySelector('#chkDirectPlay');
         const chkFilterUnreleased = page.querySelector('#chkFilterUnreleased');
         const txtBufferDays = page.querySelector('#txtBufferDays');
         const txtFFmpegAnalyzeDuration = page.querySelector('#txtFFmpegAnalyzeDuration');
@@ -315,6 +334,7 @@
         const txtUserMoviePath = page.querySelector('#txtUserMoviePath');
         const txtUserSeriesPath = page.querySelector('#txtUserSeriesPath');
         const chkUserDisableSearch = page.querySelector('#chkUserDisableSearch');
+        const chkUserDirectPlay = page.querySelector('#chkUserDirectPlay');
 
         let currentConfig = null;
         let users = [];
@@ -328,6 +348,7 @@
                 MoviePath: uc.MoviePath,
                 SeriesPath: uc.SeriesPath,
                 DisableSearch: uc.DisableSearch,
+                DirectPlay: uc.DirectPlay,
               };
             }
           });
@@ -588,6 +609,7 @@
             if (chkEnableMixed) chkEnableMixed.checked = cfg.EnableMixed ?? true;
             if (chkExtendLocalSeriesTrees) chkExtendLocalSeriesTrees.checked = cfg.ExtendLocalSeriesTrees ?? false;
             if (chkDisableSearch) chkDisableSearch.checked = cfg.DisableSearch || false;
+            if (chkDirectPlay) chkDirectPlay.checked = cfg.DirectPlay || false;
             if (chkFilterUnreleased) chkFilterUnreleased.checked = cfg.FilterUnreleased || false;
             if (txtBufferDays) txtBufferDays.value = cfg.FilterUnreleasedBufferDays ?? 0;
             if (txtFFmpegAnalyzeDuration) txtFFmpegAnalyzeDuration.value = cfg.FFmpegAnalyzeDuration || "5M";
@@ -622,6 +644,7 @@
             cfg.ExtendLocalSeriesTrees = chkExtendLocalSeriesTrees.checked;
 
             cfg.DisableSearch = chkDisableSearch.checked;
+            cfg.DirectPlay = chkDirectPlay.checked;
             cfg.FilterUnreleased = chkFilterUnreleased.checked;
             cfg.FilterUnreleasedBufferDays = txtBufferDays.value !== '' ? parseInt(txtBufferDays.value) : 0;
 
@@ -648,7 +671,8 @@
               Url: override.Url,
               MoviePath: override.MoviePath,
               SeriesPath: override.SeriesPath,
-              DisableSearch: override.DisableSearch
+              DisableSearch: override.DisableSearch,
+              DirectPlay: override.DirectPlay
             }));
 
             await window.ApiClient.updatePluginConfiguration(pluginId, cfg);
@@ -749,12 +773,14 @@
             txtUserMoviePath.value = override.MoviePath || '';
             txtUserSeriesPath.value = override.SeriesPath || '';
             chkUserDisableSearch.checked = override.DisableSearch || false;
+            chkUserDirectPlay.checked = override.DirectPlay || false;
           } else {
             // New
             txtUserUrl.value = currentConfig?.Url || '';
             txtUserMoviePath.value = currentConfig?.MoviePath || '';
             txtUserSeriesPath.value = currentConfig?.SeriesPath || '';
             chkUserDisableSearch.checked = false;
+            chkUserDirectPlay.checked = false;
           }
         }
 
@@ -772,7 +798,8 @@
             Url: txtUserUrl.value.trim(),
             MoviePath: txtUserMoviePath.value.trim(),
             SeriesPath: txtUserSeriesPath.value.trim(),
-            DisableSearch: chkUserDisableSearch.checked
+            DisableSearch: chkUserDisableSearch.checked,
+            DirectPlay: chkUserDirectPlay.checked
           };
 
           renderOverridesList();

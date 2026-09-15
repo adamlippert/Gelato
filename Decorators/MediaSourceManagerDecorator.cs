@@ -436,9 +436,11 @@ public sealed class MediaSourceManagerDecorator(
                 .ConfigureAwait(false);
         }
 
-        // Stub path after probing is done so the real URL is never sent to clients.
-        // Force File protocol so clients proxy through Jellyfin instead of direct-playing.
-        if (ctx.GetActionName() == "GetPostedPlaybackInfo")
+        // Stub path after probing is done so the real URL is never sent to clients, and force
+        // File protocol so they proxy through Jellyfin instead of direct-playing. Opt-in
+        // DirectPlay skips this for remote http(s) URLs so clients pull the stream from the
+        // debrid host themselves; loopback P2P proxy URLs are always masked.
+        if (ctx.GetActionName() == "GetPostedPlaybackInfo" && !AllowDirectPlay(selected, user))
         {
             selected.Path = "/stub";
             selected.IsRemote = false;
@@ -465,6 +467,16 @@ public sealed class MediaSourceManagerDecorator(
 
         BaseItem ResolveOwnerFor(MediaSourceInfo s, BaseItem fallback) =>
             Guid.TryParse(s.ETag, out var g) ? libraryManager.GetItemById(g) ?? fallback : fallback;
+    }
+
+    private static bool AllowDirectPlay(MediaSourceInfo source, User? user)
+    {
+        var cfg = GelatoPlugin.Instance?.Configuration;
+        if (cfg is null)
+            return false;
+
+        var effective = cfg.GetEffectiveConfig(user?.Id ?? Guid.Empty);
+        return effective.DirectPlay && DirectPlayPolicy.IsDirectPlayable(source.Path);
     }
 
     private static bool IsGelatoPlaybackItem(BaseItem item) =>
